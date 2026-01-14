@@ -1048,11 +1048,7 @@ async function fetchImage(id: number): Promise<ImageData> {
   return { id, url: `/images/${id}.jpg`, title: `Image ${id}` };
 }
 
-function Image({
-  imageDataPromise,
-}: {
-  imageDataPromise: Promise<ImageData>;
-}) {
+function Image({ imageDataPromise }: { imageDataPromise: Promise<ImageData> }) {
   const image = use(imageDataPromise);
   return (
     <div>
