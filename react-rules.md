@@ -134,7 +134,7 @@ function Component({ dataPromise }: { dataPromise: Promise<Data> }) {
   <Suspense fallback={<Loading />}>
     <Component dataPromise={promise} />
   </Suspense>
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ---
@@ -378,7 +378,7 @@ import { ErrorBoundary } from "react-error-boundary";
   <Suspense fallback={<Loading />}>
     <Component dataPromise={promise} />
   </Suspense>
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ---
@@ -463,8 +463,8 @@ function OptimisticUpdate() {
 function SearchComponent() {
   const [query, setQuery] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [resultsPromise, setResultsPromise] = useState(
-    () => Promise.resolve([])
+  const [resultsPromise, setResultsPromise] = useState(() =>
+    Promise.resolve([])
   );
 
   const handleSearch = (newQuery: string) => {
@@ -526,7 +526,7 @@ function Component({ promise }: { promise: Promise<Data> }) {
 // ✅ CORRECT
 <Suspense fallback={<Loading />}>
   <Component promise={promise} />
-</Suspense>
+</Suspense>;
 ```
 
 ### ❌ Mistake 3: Reusing Same Promise
@@ -603,7 +603,534 @@ function AsyncComponent<T>({
 // Usage
 <AsyncComponent dataPromise={fetchUser(1)}>
   {(user) => <div>{user.name}</div>}
-</AsyncComponent>
+</AsyncComponent>;
+```
+
+---
+
+## Testing
+
+### Setup
+
+```typescript
+import { render, screen, waitFor, act } from "@testing-library/react";
+import { Suspense } from "react";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+```
+
+### Testing Components with use()
+
+#### Basic Test: Resolved Promise
+
+```typescript
+describe("Image Component", () => {
+  it("renders image data when promise resolves", async () => {
+    const mockImageData: ImageData = {
+      id: 1,
+      url: "/images/1.jpg",
+      title: "Test Image",
+    };
+
+    const promise = Promise.resolve(mockImageData);
+
+    render(
+      <Suspense fallback={<div>Loading...</div>}>
+        <Image imageDataPromise={promise} imageId={1} />
+      </Suspense>
+    );
+
+    // Wait for promise to resolve and component to render
+    await waitFor(() => {
+      expect(screen.getByText("Test Image")).toBeInTheDocument();
+    });
+
+    expect(screen.getByAltText("Test Image")).toHaveAttribute(
+      "src",
+      "/images/1.jpg"
+    );
+  });
+});
+```
+
+#### Test: Loading State (Suspense Fallback)
+
+```typescript
+describe("Image Component with Suspense", () => {
+  it("shows loading fallback while promise is pending", async () => {
+    // Create a promise that doesn't resolve immediately
+    let resolvePromise: (value: ImageData) => void;
+    const promise = new Promise<ImageData>((resolve) => {
+      resolvePromise = resolve;
+    });
+
+    render(
+      <Suspense fallback={<div data-testid="loading">Loading...</div>}>
+        <Image imageDataPromise={promise} imageId={1} />
+      </Suspense>
+    );
+
+    // Should show loading state initially
+    expect(screen.getByTestId("loading")).toBeInTheDocument();
+
+    // Resolve the promise
+    await act(async () => {
+      resolvePromise!({
+        id: 1,
+        url: "/images/1.jpg",
+        title: "Test Image",
+      });
+    });
+
+    // Wait for component to render with data
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+      expect(screen.getByText("Test Image")).toBeInTheDocument();
+    });
+  });
+});
+```
+
+#### Test: Error Handling
+
+```typescript
+describe("Image Component Error Handling", () => {
+  it("handles promise rejection with error boundary", async () => {
+    const promise = Promise.reject(new Error("Failed to load image"));
+
+    const ErrorFallback = ({ error }: { error: Error }) => (
+      <div data-testid="error">{error.message}</div>
+    );
+
+    // In a real app, you'd use react-error-boundary
+    render(
+      <ErrorBoundary fallback={<ErrorFallback error={new Error("Failed")} />}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Image imageDataPromise={promise} imageId={1} />
+        </Suspense>
+      </ErrorBoundary>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("error")).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Testing useTransition()
+
+#### Test: Transition State
+
+```typescript
+describe("Button with useTransition", () => {
+  it("shows pending state during transition", async () => {
+    const mockAction = jest.fn(() => Promise.resolve());
+
+    render(<Button action={mockAction}>Next Image</Button>);
+
+    const button = screen.getByRole("button", { name: /next image/i });
+
+    // Click button
+    await act(async () => {
+      button.click();
+    });
+
+    // Button should be disabled during transition
+    expect(button).toBeDisabled();
+
+    // Wait for transition to complete
+    await waitFor(() => {
+      expect(button).not.toBeDisabled();
+    });
+
+    expect(mockAction).toHaveBeenCalled();
+  });
+});
+```
+
+#### Test: Multiple Rapid Clicks
+
+```typescript
+describe("Button with useTransition", () => {
+  it("handles rapid clicks gracefully", async () => {
+    let resolveCount = 0;
+    const mockAction = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          setTimeout(() => {
+            resolveCount++;
+            resolve();
+          }, 100);
+        })
+    );
+
+    render(<Button action={mockAction}>Next</Button>);
+
+    const button = screen.getByRole("button");
+
+    // Click multiple times rapidly
+    await act(async () => {
+      button.click();
+      button.click();
+      button.click();
+    });
+
+    // Should handle all clicks
+    await waitFor(() => {
+      expect(resolveCount).toBeGreaterThan(0);
+    });
+  });
+});
+```
+
+### Testing Complete Data Fetching Pattern
+
+#### Test: Full App Flow
+
+```typescript
+describe("App with Suspense and useTransition", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("loads and displays image data", async () => {
+    const mockFetchImage = jest.fn((id: number) =>
+      Promise.resolve({
+        id,
+        url: `/images/${id}.jpg`,
+        title: `Image ${id}`,
+      })
+    );
+
+    // Mock the fetch function
+    jest.mock("./api", () => ({
+      fetchImage: mockFetchImage,
+    }));
+
+    render(<App />);
+
+    // Initial load should show loading
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+    // Wait for initial image to load
+    await waitFor(() => {
+      expect(screen.getByText("Image 1")).toBeInTheDocument();
+    });
+
+    // Click next button
+    const nextButton = screen.getByRole("button", { name: /next image/i });
+    await act(async () => {
+      nextButton.click();
+    });
+
+    // Should show loading again
+    await waitFor(() => {
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    });
+
+    // Wait for next image to load
+    await waitFor(() => {
+      expect(screen.getByText("Image 2")).toBeInTheDocument();
+    });
+
+    expect(mockFetchImage).toHaveBeenCalledWith(2);
+  });
+});
+```
+
+### Mocking Promises
+
+#### Helper: Create Controllable Promise
+
+```typescript
+function createControllablePromise<T>() {
+  let resolve: (value: T) => void;
+  let reject: (error: Error) => void;
+
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return {
+    promise,
+    resolve: resolve!,
+    reject: reject!,
+  };
+}
+
+// Usage in tests
+describe("Controllable Promise", () => {
+  it("allows manual control of promise resolution", async () => {
+    const { promise, resolve } = createControllablePromise<ImageData>();
+
+    render(
+      <Suspense fallback={<div>Loading...</div>}>
+        <Image imageDataPromise={promise} imageId={1} />
+      </Suspense>
+    );
+
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    await act(async () => {
+      resolve({
+        id: 1,
+        url: "/images/1.jpg",
+        title: "Test Image",
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test Image")).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Testing Suspense Boundaries
+
+#### Test: Nested Suspense
+
+```typescript
+describe("Nested Suspense", () => {
+  it("shows appropriate fallback for nested boundaries", async () => {
+    const userPromise = Promise.resolve({ id: 1, name: "John" });
+    const postsPromise = new Promise(() => {}); // Never resolves
+
+    render(
+      <Suspense fallback={<div>Loading user...</div>}>
+        <UserProfile userPromise={userPromise} />
+        <Suspense fallback={<div>Loading posts...</div>}>
+          <PostsList postsPromise={postsPromise} />
+        </Suspense>
+      </Suspense>
+    );
+
+    // User should load
+    await waitFor(() => {
+      expect(screen.getByText("John")).toBeInTheDocument();
+    });
+
+    // Posts should show loading
+    expect(screen.getByText("Loading posts...")).toBeInTheDocument();
+    expect(screen.queryByText("Loading user...")).not.toBeInTheDocument();
+  });
+});
+```
+
+### Testing with React Testing Library Utilities
+
+#### Using findBy Queries
+
+```typescript
+describe("Async Component Testing", () => {
+  it("uses findBy queries for async content", async () => {
+    const promise = Promise.resolve({
+      id: 1,
+      title: "Async Title",
+    });
+
+    render(
+      <Suspense fallback={<div>Loading...</div>}>
+        <Component dataPromise={promise} />
+      </Suspense>
+    );
+
+    // findBy queries automatically wait
+    const title = await screen.findByText("Async Title");
+    expect(title).toBeInTheDocument();
+  });
+});
+```
+
+#### Using waitFor with Custom Conditions
+
+```typescript
+describe("Custom Wait Conditions", () => {
+  it("waits for custom conditions", async () => {
+    const promise = Promise.resolve({ count: 5 });
+
+    render(
+      <Suspense fallback={<div>Loading...</div>}>
+        <Counter dataPromise={promise} />
+      </Suspense>
+    );
+
+    await waitFor(
+      () => {
+        const counter = screen.getByTestId("counter");
+        expect(counter).toHaveTextContent("5");
+      },
+      { timeout: 3000 }
+    );
+  });
+});
+```
+
+### Testing Best Practices
+
+#### 1. Always Wrap with Suspense
+
+```typescript
+// ✅ GOOD: Always include Suspense in tests
+render(
+  <Suspense fallback={<div>Loading...</div>}>
+    <Component dataPromise={promise} />
+  </Suspense>
+);
+
+// ❌ BAD: Missing Suspense will cause errors
+render(<Component dataPromise={promise} />);
+```
+
+#### 2. Use act() for State Updates
+
+```typescript
+// ✅ GOOD: Wrap state updates in act()
+await act(async () => {
+  resolvePromise(data);
+});
+
+// ❌ BAD: State updates outside act() may cause warnings
+resolvePromise(data);
+```
+
+#### 3. Clean Up Promises
+
+```typescript
+describe("Component", () => {
+  let resolvePromise: (value: Data) => void;
+
+  beforeEach(() => {
+    const promise = new Promise<Data>((resolve) => {
+      resolvePromise = resolve;
+    });
+    // Use promise in tests
+  });
+
+  afterEach(() => {
+    // Clean up any pending promises
+    jest.clearAllTimers();
+  });
+});
+```
+
+#### 4. Mock External Dependencies
+
+```typescript
+// Mock fetch function
+jest.mock("./api", () => ({
+  fetchImage: jest.fn((id: number) =>
+    Promise.resolve({
+      id,
+      url: `/images/${id}.jpg`,
+      title: `Image ${id}`,
+    })
+  ),
+}));
+```
+
+### Complete Test Example
+
+```typescript
+import { render, screen, waitFor, act } from "@testing-library/react";
+import { Suspense, use, useState, useTransition } from "react";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+
+type ImageData = {
+  id: number;
+  url: string;
+  title: string;
+};
+
+async function fetchImage(id: number): Promise<ImageData> {
+  await new Promise((r) => setTimeout(r, 100));
+  return { id, url: `/images/${id}.jpg`, title: `Image ${id}` };
+}
+
+function Image({
+  imageDataPromise,
+}: {
+  imageDataPromise: Promise<ImageData>;
+}) {
+  const image = use(imageDataPromise);
+  return (
+    <div>
+      <h2>{image.title}</h2>
+      <img src={image.url} alt={image.title} />
+    </div>
+  );
+}
+
+function App() {
+  const [imageId, setImageId] = useState(1);
+  const [imageDataPromise, setImageDataPromise] = useState<Promise<ImageData>>(
+    () => fetchImage(imageId)
+  );
+  const [isPending, startTransition] = useTransition();
+
+  const handleNext = () => {
+    startTransition(() => {
+      const nextId = imageId + 1;
+      setImageId(nextId);
+      setImageDataPromise(fetchImage(nextId));
+    });
+  };
+
+  return (
+    <div>
+      <button onClick={handleNext} disabled={isPending}>
+        Next Image
+      </button>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Image imageDataPromise={imageDataPromise} />
+      </Suspense>
+    </div>
+  );
+}
+
+describe("App Integration Test", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
+  });
+
+  it("loads initial image and transitions to next", async () => {
+    render(<App />);
+
+    // Initial loading state
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    // Fast-forward timers
+    await act(async () => {
+      jest.advanceTimersByTime(100);
+    });
+
+    // Wait for initial image
+    await waitFor(() => {
+      expect(screen.getByText("Image 1")).toBeInTheDocument();
+    });
+
+    // Click next button
+    const button = screen.getByRole("button");
+    await act(async () => {
+      button.click();
+      jest.advanceTimersByTime(100);
+    });
+
+    // Should show loading again
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    // Wait for next image
+    await waitFor(() => {
+      expect(screen.getByText("Image 2")).toBeInTheDocument();
+    });
+  });
+});
 ```
 
 ---
