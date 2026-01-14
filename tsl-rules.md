@@ -1007,6 +1007,354 @@ const circle = smoothstep(float(1.0), float(0.8), dist);
 
 ---
 
+## Lighting and Shadows
+
+> Source: [Lighting and Shadows Course - threejsroadmap.com](https://threejsroadmap.com/courses/lighting-and-shadows)
+
+### Overview
+
+TSL node materials automatically handle lighting when using materials like `MeshStandardNodeMaterial` or `MeshPhongNodeMaterial`. However, you can also create custom lighting calculations for more control.
+
+### Materials That Support Lighting
+
+```javascript
+// These materials automatically respond to lights in the scene
+MeshStandardNodeMaterial   // PBR - responds to all light types
+MeshPhysicalNodeMaterial   // Extended PBR
+MeshPhongNodeMaterial      // Blinn-Phong shading
+MeshLambertNodeMaterial    // Lambert diffuse only
+MeshToonNodeMaterial       // Cel-shaded lighting
+
+// These materials do NOT respond to lights
+MeshBasicNodeMaterial      // Unlit - use for custom lighting
+```
+
+### Accessing Light Information in TSL
+
+When creating custom lighting, you can access light data through the material context:
+
+```javascript
+import { Fn, vec3, float, dot, normalize, max, pow } from 'three/tsl';
+
+// Access light direction (for directional lights)
+const material = new THREE.MeshBasicNodeMaterial();
+
+material.colorNode = Fn(({ lightDirection, lightColor, lightIntensity }) => {
+  // lightDirection is a vec3 pointing FROM the light
+  // For directional lights, this is constant
+  // For point/spot lights, calculate: normalize(lightPosition - positionWorld)
+  
+  const N = normalWorld;
+  const L = normalize(lightDirection);
+  
+  // Lambert diffuse
+  const NdotL = max(dot(N, L), 0.0);
+  const diffuse = NdotL.mul(lightIntensity).mul(lightColor);
+  
+  return vec4(diffuse, 1.0);
+});
+```
+
+### Custom Lighting Calculations
+
+#### Lambert Diffuse Lighting
+
+```javascript
+import { Fn, vec3, vec4, float, dot, normalize, max } from 'three/tsl';
+
+material.colorNode = Fn(() => {
+  // Light direction (example: directional light from above-right)
+  const lightDir = normalize(vec3(1, 1, 0.5));
+  const normal = normalWorld;
+  
+  // Lambert: N · L
+  const NdotL = max(dot(normal, lightDir), 0.0);
+  
+  // Base color with lighting
+  const baseColor = vec3(0.8, 0.6, 0.4);
+  const litColor = baseColor.mul(NdotL);
+  
+  // Add ambient
+  const ambient = baseColor.mul(0.2);
+  const finalColor = litColor.add(ambient);
+  
+  return vec4(finalColor, 1.0);
+})();
+```
+
+#### Blinn-Phong Lighting (Diffuse + Specular)
+
+```javascript
+import { Fn, vec3, vec4, float, dot, normalize, max, pow, reflect } from 'three/tsl';
+
+material.colorNode = Fn(() => {
+  const lightDir = normalize(vec3(1, 1, 0.5));
+  const normal = normalWorld;
+  const viewDir = normalize(cameraPosition.sub(positionWorld));
+  
+  // Diffuse (Lambert)
+  const NdotL = max(dot(normal, lightDir), 0.0);
+  const diffuse = vec3(0.8, 0.6, 0.4).mul(NdotL);
+  
+  // Specular (Blinn-Phong)
+  const halfDir = normalize(lightDir.add(viewDir));
+  const NdotH = max(dot(normal, halfDir), 0.0);
+  const shininess = float(32.0);
+  const specular = pow(NdotH, shininess).mul(0.5);
+  
+  // Combine
+  const ambient = vec3(0.2, 0.2, 0.2);
+  const finalColor = diffuse.add(specular).add(ambient);
+  
+  return vec4(finalColor, 1.0);
+})();
+```
+
+#### PBR-Style Lighting (Roughness/Metalness)
+
+```javascript
+import { Fn, vec3, vec4, float, dot, normalize, max, pow, mix } from 'three/tsl';
+
+const material = new THREE.MeshStandardNodeMaterial();
+
+// Custom PBR calculations
+material.colorNode = Fn(() => {
+  const baseColor = vec3(0.8, 0.2, 0.2);
+  const roughness = float(0.5);
+  const metalness = float(0.0);
+  
+  // Use built-in PBR lighting, but modify base color
+  return vec4(baseColor, 1.0);
+})();
+
+// Or override roughness/metalness nodes
+material.roughnessNode = uniform(0.3);
+material.metalnessNode = uniform(0.8);
+```
+
+### Light Types and Their Properties
+
+#### Directional Light
+
+```javascript
+// In JavaScript (scene setup)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(5, 10, 7.5);
+scene.add(directionalLight);
+
+// In TSL - light direction is constant across the scene
+const lightDir = normalize(vec3(-0.5, -1, -0.3)); // Example direction
+```
+
+#### Point Light
+
+```javascript
+// In JavaScript
+const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+pointLight.position.set(10, 10, 10);
+scene.add(pointLight);
+
+// In TSL - calculate direction per fragment
+material.colorNode = Fn(() => {
+  const lightPos = vec3(10, 10, 10);
+  const lightDir = normalize(lightPos.sub(positionWorld));
+  
+  // Calculate distance for attenuation
+  const distance = length(lightPos.sub(positionWorld));
+  const attenuation = float(1.0).div(distance.mul(distance).add(1.0));
+  
+  const NdotL = max(dot(normalWorld, lightDir), 0.0);
+  const lit = NdotL.mul(attenuation);
+  
+  return vec4(vec3(lit), 1.0);
+})();
+```
+
+#### Spot Light
+
+```javascript
+// In JavaScript
+const spotLight = new THREE.SpotLight(0xffffff, 1);
+spotLight.position.set(10, 10, 10);
+spotLight.angle = Math.PI / 6;
+spotLight.penumbra = 0.1;
+scene.add(spotLight);
+
+// In TSL - calculate cone attenuation
+material.colorNode = Fn(() => {
+  const lightPos = vec3(10, 10, 10);
+  const lightDir = normalize(lightPos.sub(positionWorld));
+  const spotDir = normalize(vec3(0, -1, 0)); // Spot direction
+  const spotAngle = float(Math.cos(Math.PI / 6)); // cos(angle)
+  
+  // Spot cone calculation
+  const spotDot = dot(lightDir.negate(), spotDir);
+  const spotFactor = smoothstep(spotAngle.mul(0.9), spotAngle, spotDot);
+  
+  const NdotL = max(dot(normalWorld, lightDir), 0.0);
+  const lit = NdotL.mul(spotFactor);
+  
+  return vec4(vec3(lit), 1.0);
+})();
+```
+
+#### Ambient Light
+
+```javascript
+// In JavaScript
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+// In TSL - ambient is constant
+const ambient = vec3(0.5, 0.5, 0.5); // Constant color
+```
+
+### Multiple Lights
+
+```javascript
+material.colorNode = Fn(() => {
+  const baseColor = vec3(0.8, 0.6, 0.4);
+  const ambient = baseColor.mul(0.2);
+  
+  // Light 1: Directional
+  const lightDir1 = normalize(vec3(1, 1, 0.5));
+  const NdotL1 = max(dot(normalWorld, lightDir1), 0.0);
+  const light1 = baseColor.mul(NdotL1).mul(0.8);
+  
+  // Light 2: Point light
+  const lightPos2 = vec3(5, 5, 5);
+  const lightDir2 = normalize(lightPos2.sub(positionWorld));
+  const dist2 = length(lightPos2.sub(positionWorld));
+  const atten2 = float(1.0).div(dist2.mul(dist2).add(1.0));
+  const NdotL2 = max(dot(normalWorld, lightDir2), 0.0);
+  const light2 = baseColor.mul(NdotL2).mul(atten2).mul(0.5);
+  
+  // Combine all lights
+  const finalColor = ambient.add(light1).add(light2);
+  return vec4(finalColor, 1.0);
+})();
+```
+
+### Shadows
+
+#### Enabling Shadows
+
+```javascript
+// In JavaScript
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.width = 2048;
+directionalLight.shadow.mapSize.height = 2048;
+
+mesh.castShadow = true;
+mesh.receiveShadow = true;
+```
+
+#### Accessing Shadow Maps in TSL
+
+```javascript
+import { shadow } from 'three/tsl';
+
+material.colorNode = Fn(() => {
+  // Access shadow factor (0 = fully shadowed, 1 = fully lit)
+  const shadowFactor = shadow();
+  
+  // Apply shadow to lighting
+  const baseColor = vec3(0.8, 0.6, 0.4);
+  const litColor = baseColor.mul(shadowFactor);
+  const shadowColor = baseColor.mul(0.2); // Darker in shadow
+  
+  const finalColor = mix(shadowColor, litColor, shadowFactor);
+  return vec4(finalColor, 1.0);
+})();
+```
+
+### Environment Maps (IBL - Image Based Lighting)
+
+```javascript
+// In JavaScript
+const envMap = new THREE.CubeTextureLoader().load([
+  'px.jpg', 'nx.jpg',
+  'py.jpg', 'ny.jpg',
+  'pz.jpg', 'nz.jpg'
+]);
+scene.environment = envMap;
+
+// In TSL - access via envNode
+material.envNode = cubeTexture(envMap, reflectVector);
+```
+
+### Common Lighting Patterns
+
+#### Rim Lighting (Fresnel Edge Glow)
+
+```javascript
+material.emissiveNode = Fn(() => {
+  const viewDir = normalize(cameraPosition.sub(positionWorld));
+  const NdotV = max(dot(normalWorld, viewDir), 0.0);
+  const fresnel = pow(float(1.0).sub(NdotV), 3.0);
+  return vec3(1, 1, 1).mul(fresnel).mul(0.5);
+})();
+```
+
+#### Toon/Cel Shading
+
+```javascript
+material.colorNode = Fn(() => {
+  const lightDir = normalize(vec3(1, 1, 0.5));
+  const NdotL = dot(normalWorld, lightDir);
+  
+  // Quantize lighting into bands
+  const toonSteps = float(3.0);
+  const toon = floor(NdotL.mul(toonSteps)).div(toonSteps);
+  const lit = max(toon, 0.0);
+  
+  return vec4(vec3(lit), 1.0);
+})();
+```
+
+#### Subsurface Scattering (Simplified)
+
+```javascript
+material.colorNode = Fn(() => {
+  const lightDir = normalize(vec3(1, 1, 0.5));
+  const viewDir = normalize(cameraPosition.sub(positionWorld));
+  const normal = normalWorld;
+  
+  // Standard lighting
+  const NdotL = max(dot(normal, lightDir), 0.0);
+  
+  // Subsurface: light coming through from behind
+  const VdotL = dot(viewDir, lightDir);
+  const subsurface = max(VdotL.negate(), 0.0).mul(0.3);
+  
+  const baseColor = vec3(1.0, 0.8, 0.7);
+  const lit = baseColor.mul(NdotL.add(subsurface));
+  
+  return vec4(lit, 1.0);
+})();
+```
+
+### Performance Tips
+
+1. **Use built-in materials when possible** - `MeshStandardNodeMaterial` handles lighting efficiently
+2. **Limit light count** - Each additional light increases shader complexity
+3. **Use light culling** - Only calculate lighting for lights that affect the object
+4. **Cache calculations** - Reuse light direction calculations when possible
+5. **Use LOD** - Simpler lighting for distant objects
+
+### Best Practices
+
+- **Always normalize light directions** - Unnormalized vectors cause incorrect lighting
+- **Clamp dot products** - Use `max(dot(N, L), 0.0)` to prevent negative lighting
+- **Add ambient term** - Prevents completely black shadows
+- **Consider energy conservation** - Diffuse + specular should not exceed 1.0
+- **Use appropriate material types** - Don't reinvent PBR if `MeshStandardNodeMaterial` works
+
+---
+
 ## Summary
 
 This reference document helps overcome the major hurdles of developing TSL code with AI by:
