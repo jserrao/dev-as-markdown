@@ -16,32 +16,37 @@ This reference document eliminates about 90% of the hallucinated garbage and get
 
 **STOP. Read this section first. These will cause errors or warnings.**
 
-| ❌ DO NOT USE | ✅ USE INSTEAD |
-|---------------|----------------|
-| `timerGlobal` | `time` |
-| `timerLocal` | `time` |
-| `timerDelta` | `deltaTime` |
-| `import from 'three/nodes'` | `import from 'three/tsl'` |
+| ❌ DO NOT USE                    | ✅ USE INSTEAD                          |
+| -------------------------------- | --------------------------------------- |
+| `timerGlobal`                    | `time`                                  |
+| `timerLocal`                     | `time`                                  |
+| `timerDelta`                     | `deltaTime`                             |
+| `import from 'three/nodes'`      | `import from 'three/tsl'`               |
 | `import * as THREE from 'three'` | `import * as THREE from 'three/webgpu'` |
-| `oscSine(timerGlobal)` | `oscSine(time)` or `oscSine()` |
-| `oscSquare(timerGlobal)` | `oscSquare(time)` or `oscSquare()` |
-| `oscTriangle(timerGlobal)` | `oscTriangle(time)` or `oscTriangle()` |
-| `oscSawtooth(timerGlobal)` | `oscSawtooth(time)` or `oscSawtooth()` |
+| `oscSine(timerGlobal)`           | `oscSine(time)` or `oscSine()`          |
+| `oscSquare(timerGlobal)`         | `oscSquare(time)` or `oscSquare()`      |
+| `oscTriangle(timerGlobal)`       | `oscTriangle(time)` or `oscTriangle()`  |
+| `oscSawtooth(timerGlobal)`       | `oscSawtooth(time)` or `oscSawtooth()`  |
 
 ---
 
 ## CRITICAL: What TSL Is
 
 TSL is JavaScript that builds shader node graphs. Code executes at TWO times:
+
 - **Build time**: JavaScript runs, constructs node graph
 - **Run time**: Compiled WGSL/GLSL executes on GPU
 
 ```javascript
 // BUILD TIME: JavaScript conditional (runs once when shader compiles)
-if (material.transparent) { return transparent_shader; }
+if (material.transparent) {
+  return transparent_shader;
+}
 
 // RUN TIME: TSL conditional (runs every pixel/vertex on GPU)
-If(value.greaterThan(0.5), () => { result.assign(1.0); });
+If(value.greaterThan(0.5), () => {
+  result.assign(1.0);
+});
 ```
 
 ---
@@ -51,26 +56,26 @@ If(value.greaterThan(0.5), () => { result.assign(1.0); });
 ### NPM (Preferred)
 
 ```javascript
-import * as THREE from 'three/webgpu';
-import { Fn, vec3, float, uniform, /* ... */ } from 'three/tsl';
+import * as THREE from "three/webgpu";
+import { Fn, vec3, float, uniform /* ... */ } from "three/tsl";
 ```
 
 ### CDN (ES Modules)
 
 ```html
 <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.webgpu.min.js",
-    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.webgpu.min.js",
-    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.tsl.min.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.webgpu.min.js",
+      "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.webgpu.min.js",
+      "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.tsl.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181.0/examples/jsm/"
+    }
   }
-}
 </script>
 <script type="module">
-import * as THREE from 'three/webgpu';
-import { vec3, float, Fn, uniform } from 'three/tsl';
+  import * as THREE from "three/webgpu";
+  import { vec3, float, Fn, uniform } from "three/tsl";
 </script>
 ```
 
@@ -78,14 +83,14 @@ import { vec3, float, Fn, uniform } from 'three/tsl';
 
 ```html
 <script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.181.0/build/three.webgpu.min.js",
-    "three/webgpu": "https://unpkg.com/three@0.181.0/build/three.webgpu.min.js",
-    "three/tsl": "https://unpkg.com/three@0.181.0/build/three.tsl.min.js",
-    "three/addons/": "https://unpkg.com/three@0.181.0/examples/jsm/"
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.181.0/build/three.webgpu.min.js",
+      "three/webgpu": "https://unpkg.com/three@0.181.0/build/three.webgpu.min.js",
+      "three/tsl": "https://unpkg.com/three@0.181.0/build/three.tsl.min.js",
+      "three/addons/": "https://unpkg.com/three@0.181.0/examples/jsm/"
+    }
   }
-}
 </script>
 ```
 
@@ -93,14 +98,14 @@ import { vec3, float, Fn, uniform } from 'three/tsl';
 
 ```javascript
 // WRONG: Old path
-import { vec3 } from 'three/nodes';
+import { vec3 } from "three/nodes";
 // CORRECT:
-import { vec3 } from 'three/tsl';
+import { vec3 } from "three/tsl";
 
 // WRONG: WebGL renderer with TSL
-import * as THREE from 'three';
+import * as THREE from "three";
 // CORRECT: WebGPU renderer
-import * as THREE from 'three/webgpu';
+import * as THREE from "three/webgpu";
 ```
 
 ---
@@ -125,20 +130,20 @@ renderer.render(scene, camera);
 
 ## Type Constructors
 
-| Constructor | Input | Output |
-|-------------|-------|--------|
-| `float(x)` | number, node | float |
-| `int(x)` | number, node | int |
-| `uint(x)` | number, node | uint |
-| `bool(x)` | boolean, node | bool |
-| `vec2(x,y)` | numbers, nodes, Vector2 | vec2 |
-| `vec3(x,y,z)` | numbers, nodes, Vector3, Color | vec3 |
-| `vec4(x,y,z,w)` | numbers, nodes, Vector4 | vec4 |
-| `color(hex)` | hex number | vec3 |
-| `color(r,g,b)` | numbers 0-1 | vec3 |
-| `ivec2/3/4` | integers | signed int vector |
-| `uvec2/3/4` | integers | unsigned int vector |
-| `mat2/3/4` | numbers, Matrix | matrix |
+| Constructor     | Input                          | Output              |
+| --------------- | ------------------------------ | ------------------- |
+| `float(x)`      | number, node                   | float               |
+| `int(x)`        | number, node                   | int                 |
+| `uint(x)`       | number, node                   | uint                |
+| `bool(x)`       | boolean, node                  | bool                |
+| `vec2(x,y)`     | numbers, nodes, Vector2        | vec2                |
+| `vec3(x,y,z)`   | numbers, nodes, Vector3, Color | vec3                |
+| `vec4(x,y,z,w)` | numbers, nodes, Vector4        | vec4                |
+| `color(hex)`    | hex number                     | vec3                |
+| `color(r,g,b)`  | numbers 0-1                    | vec3                |
+| `ivec2/3/4`     | integers                       | signed int vector   |
+| `uvec2/3/4`     | integers                       | unsigned int vector |
+| `mat2/3/4`      | numbers, Matrix                | matrix              |
 
 ### Type Conversions
 
@@ -154,33 +159,33 @@ node.toVec2()   node.toVec3() node.toVec4()  node.toColor()
 ### Arithmetic (method chaining)
 
 ```javascript
-a.add(b)      // a + b (supports multiple: a.add(b, c, d))
-a.sub(b)      // a - b
-a.mul(b)      // a * b
-a.div(b)      // a / b
-a.mod(b)      // a % b
-a.negate()    // -a
+a.add(b); // a + b (supports multiple: a.add(b, c, d))
+a.sub(b); // a - b
+a.mul(b); // a * b
+a.div(b); // a / b
+a.mod(b); // a % b
+a.negate(); // -a
 ```
 
 ### Assignment (for mutable variables)
 
 ```javascript
-v.assign(x)        // v = x
-v.addAssign(x)     // v += x
-v.subAssign(x)     // v -= x
-v.mulAssign(x)     // v *= x
-v.divAssign(x)     // v /= x
+v.assign(x); // v = x
+v.addAssign(x); // v += x
+v.subAssign(x); // v -= x
+v.mulAssign(x); // v *= x
+v.divAssign(x); // v /= x
 ```
 
 ### Comparison (returns bool node)
 
 ```javascript
-a.equal(b)           // a == b
-a.notEqual(b)        // a != b
-a.lessThan(b)        // a < b
-a.greaterThan(b)     // a > b
-a.lessThanEqual(b)   // a <= b
-a.greaterThanEqual(b)// a >= b
+a.equal(b); // a == b
+a.notEqual(b); // a != b
+a.lessThan(b); // a < b
+a.greaterThan(b); // a > b
+a.lessThanEqual(b); // a <= b
+a.greaterThanEqual(b); // a >= b
 ```
 
 ### Logical
@@ -215,20 +220,20 @@ v.xxx                       // duplicate
 ```javascript
 // WRONG: Cannot modify immutable node
 const pos = positionLocal;
-pos.y = pos.y.add(1);  // ERROR
+pos.y = pos.y.add(1); // ERROR
 
 // CORRECT: Use .toVar() for mutable variable
 const pos = positionLocal.toVar();
-pos.y.assign(pos.y.add(1));  // OK
+pos.y.assign(pos.y.add(1)); // OK
 ```
 
 ### Variable Types
 
 ```javascript
-const v = expr.toVar();           // mutable variable
-const v = expr.toVar('name');     // named mutable variable
-const c = expr.toConst();         // inline constant
-const p = property('float');      // uninitialized property
+const v = expr.toVar(); // mutable variable
+const v = expr.toVar("name"); // named mutable variable
+const c = expr.toConst(); // inline constant
+const p = property("float"); // uninitialized property
 ```
 
 ---
@@ -246,8 +251,8 @@ const u = uniform(0.5);
 u.value = newValue;
 
 // Auto-update callbacks
-u.onFrameUpdate(() => value);                    // once per frame
-u.onRenderUpdate(({ camera }) => value);         // once per render
+u.onFrameUpdate(() => value); // once per frame
+u.onRenderUpdate(({ camera }) => value); // once per render
 u.onObjectUpdate(({ object }) => object.position.y); // per object
 ```
 
@@ -259,7 +264,9 @@ u.onObjectUpdate(({ object }) => object.position.y); // per object
 
 ```javascript
 // Array parameters
-const myFn = Fn(([a, b, c]) => { return a.add(b).mul(c); });
+const myFn = Fn(([a, b, c]) => {
+  return a.add(b).mul(c);
+});
 
 // Object parameters
 const myFn = Fn(({ color = vec3(1), intensity = 1.0 }) => {
@@ -267,12 +274,16 @@ const myFn = Fn(({ color = vec3(1), intensity = 1.0 }) => {
 });
 
 // With defaults
-const myFn = Fn(([t = time]) => { return t.sin(); });
+const myFn = Fn(([t = time]) => {
+  return t.sin();
+});
 
 // Access build context (second param or first if no inputs)
 const myFn = Fn(([input], { material, geometry, object, camera }) => {
   // JS conditionals here run at BUILD time
-  if (material.transparent) { return input.mul(0.5); }
+  if (material.transparent) {
+    return input.mul(0.5);
+  }
   return input;
 });
 ```
@@ -280,9 +291,9 @@ const myFn = Fn(([input], { material, geometry, object, camera }) => {
 ### Calling Functions
 
 ```javascript
-myFn(a, b, c)           // array params
-myFn({ color: red })    // object params
-myFn()                  // use defaults
+myFn(a, b, c); // array params
+myFn({ color: red }); // object params
+myFn(); // use defaults
 ```
 
 ### Inline Functions (no Fn wrapper)
@@ -300,26 +311,37 @@ const simple = (t) => t.sin().mul(0.5).add(0.5);
 
 ```javascript
 // WRONG
-if(condition, () => {})    // lowercase 'if' is JavaScript
+if ((condition, () => {}))
+  // lowercase 'if' is JavaScript
 
-// CORRECT (inside Fn())
-If(a.greaterThan(b), () => {
-  result.assign(a);
-}).ElseIf(a.lessThan(c), () => {
-  result.assign(c);
-}).Else(() => {
-  result.assign(b);
-});
+  // CORRECT (inside Fn())
+  If(a.greaterThan(b), () => {
+    result.assign(a);
+  })
+    .ElseIf(a.lessThan(c), () => {
+      result.assign(c);
+    })
+    .Else(() => {
+      result.assign(b);
+    });
 ```
 
 ### Switch/Case
 
 ```javascript
 Switch(mode)
-  .Case(0, () => { out.assign(red); })
-  .Case(1, () => { out.assign(green); })
-  .Case(2, 3, () => { out.assign(blue); })  // multiple values
-  .Default(() => { out.assign(white); });
+  .Case(0, () => {
+    out.assign(red);
+  })
+  .Case(1, () => {
+    out.assign(green);
+  })
+  .Case(2, 3, () => {
+    out.assign(blue);
+  }) // multiple values
+  .Default(() => {
+    out.assign(white);
+  });
 // NOTE: No fallthrough, implicit break
 ```
 
@@ -338,14 +360,14 @@ const clamped = select(x.greaterThan(max), max, x);
 ### Math-Based (Preferred for Performance)
 
 ```javascript
-step(edge, x)           // x < edge ? 0 : 1
-mix(a, b, t)            // a*(1-t) + b*t
-smoothstep(e0, e1, x)   // smooth 0→1 transition
-clamp(x, min, max)      // constrain range
-saturate(x)             // clamp(x, 0, 1)
+step(edge, x); // x < edge ? 0 : 1
+mix(a, b, t); // a*(1-t) + b*t
+smoothstep(e0, e1, x); // smooth 0→1 transition
+clamp(x, min, max); // constrain range
+saturate(x); // clamp(x, 0, 1)
 
 // Pattern: conditional selection without branching
-mix(valueA, valueB, step(threshold, selector))
+mix(valueA, valueB, step(threshold, selector));
 ```
 
 ---
@@ -354,23 +376,30 @@ mix(valueA, valueB, step(threshold, selector))
 
 ```javascript
 // Basic
-Loop(count, ({ i }) => { /* i is loop index */ });
+Loop(count, ({ i }) => {
+  /* i is loop index */
+});
 
 // With options
-Loop({ start: int(0), end: int(10), type: 'int', condition: '<' }, ({ i }) => {});
+Loop(
+  { start: int(0), end: int(10), type: "int", condition: "<" },
+  ({ i }) => {}
+);
 
 // Nested
 Loop(10, 5, ({ i, j }) => {});
 
 // Backward
-Loop({ start: 10 }, ({ i }) => {});  // counts down
+Loop({ start: 10 }, ({ i }) => {}); // counts down
 
 // While-style
-Loop(value.lessThan(10), () => { value.addAssign(1); });
+Loop(value.lessThan(10), () => {
+  value.addAssign(1);
+});
 
 // Control
-Break();     // exit loop
-Continue();  // skip iteration
+Break(); // exit loop
+Continue(); // skip iteration
 ```
 
 ---
@@ -436,10 +465,10 @@ pow2(x) pow3(x) pow4(x) // x^2, x^3, x^4
 ## Oscillators
 
 ```javascript
-oscSine(t = time)      // sine wave 0→1→0
-oscSquare(t = time)    // square wave 0/1
-oscTriangle(t = time)  // triangle wave
-oscSawtooth(t = time)  // sawtooth wave
+oscSine((t = time)); // sine wave 0→1→0
+oscSquare((t = time)); // square wave 0/1
+oscTriangle((t = time)); // triangle wave
+oscSawtooth((t = time)); // sawtooth wave
 ```
 
 ---
@@ -447,11 +476,11 @@ oscSawtooth(t = time)  // sawtooth wave
 ## Blend Modes
 
 ```javascript
-blendBurn(a, b)    // color burn
-blendDodge(a, b)   // color dodge
-blendScreen(a, b)  // screen
-blendOverlay(a, b) // overlay
-blendColor(a, b)   // normal blend
+blendBurn(a, b); // color burn
+blendDodge(a, b); // color dodge
+blendScreen(a, b); // screen
+blendOverlay(a, b); // overlay
+blendColor(a, b); // normal blend
 ```
 
 ---
@@ -459,13 +488,13 @@ blendColor(a, b)   // normal blend
 ## UV Utilities
 
 ```javascript
-uv()                                        // default UV coordinates (vec2, 0-1)
-uv(index)                                   // specific UV channel
-matcapUV                                    // matcap texture coords
-rotateUV(uv, rotation, center = vec2(0.5))  // rotate UVs
-spherizeUV(uv, strength, center = vec2(0.5))// spherical distortion
-spritesheetUV(count, uv = uv(), frame = 0)  // sprite animation
-equirectUV(direction = positionWorldDirection) // equirect mapping
+uv(); // default UV coordinates (vec2, 0-1)
+uv(index); // specific UV channel
+matcapUV; // matcap texture coords
+rotateUV(uv, rotation, (center = vec2(0.5))); // rotate UVs
+spherizeUV(uv, strength, (center = vec2(0.5))); // spherical distortion
+spritesheetUV(count, (uv = uv()), (frame = 0)); // sprite animation
+equirectUV((direction = positionWorldDirection)); // equirect mapping
 ```
 
 ---
@@ -473,8 +502,8 @@ equirectUV(direction = positionWorldDirection) // equirect mapping
 ## Reflect
 
 ```javascript
-reflectView    // reflection in view space
-reflectVector  // reflection in world space
+reflectView; // reflection in view space
+reflectVector; // reflection in world space
 ```
 
 ---
@@ -482,8 +511,8 @@ reflectVector  // reflection in world space
 ## Interpolation Helpers
 
 ```javascript
-remap(node, inLow, inHigh, outLow = 0, outHigh = 1)      // remap range
-remapClamp(node, inLow, inHigh, outLow = 0, outHigh = 1) // remap + clamp
+remap(node, inLow, inHigh, (outLow = 0), (outHigh = 1)); // remap range
+remapClamp(node, inLow, inHigh, (outLow = 0), (outHigh = 1)); // remap + clamp
 ```
 
 ---
@@ -491,8 +520,8 @@ remapClamp(node, inLow, inHigh, outLow = 0, outHigh = 1) // remap + clamp
 ## Random
 
 ```javascript
-hash(seed)      // pseudo-random float [0,1]
-range(min, max) // random attribute per instance
+hash(seed); // pseudo-random float [0,1]
+range(min, max); // random attribute per instance
 ```
 
 ---
@@ -501,13 +530,13 @@ range(min, max) // random attribute per instance
 
 ```javascript
 // Constant array
-const arr = array([vec3(1,0,0), vec3(0,1,0), vec3(0,0,1)]);
-arr.element(i)    // dynamic index
-arr[0]            // constant index only
+const arr = array([vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1)]);
+arr.element(i); // dynamic index
+arr[0]; // constant index only
 
 // Uniform array (updatable from JS)
-const arr = uniformArray([new THREE.Color(0xff0000)], 'color');
-arr.array[0] = new THREE.Color(0x00ff00);  // update
+const arr = uniformArray([new THREE.Color(0xff0000)], "color");
+arr.array[0] = new THREE.Color(0x00ff00); // update
 ```
 
 ---
@@ -516,7 +545,7 @@ arr.array[0] = new THREE.Color(0x00ff00);  // update
 
 ```javascript
 // Compute in vertex, interpolate to fragment
-const v = varying(expression, 'name');
+const v = varying(expression, "name");
 
 // Optimize: force vertex computation
 const v = vertexStage(expression);
@@ -527,11 +556,11 @@ const v = vertexStage(expression);
 ## Textures
 
 ```javascript
-texture(tex)                    // sample at default UV
-texture(tex, uv)                // sample at UV
-texture(tex, uv, level)         // sample with LOD
-cubeTexture(tex, direction)     // cubemap
-triplanarTexture(texX, texY, texZ, scale, pos, normal)
+texture(tex); // sample at default UV
+texture(tex, uv); // sample at UV
+texture(tex, uv, level); // sample with LOD
+cubeTexture(tex, direction); // cubemap
+triplanarTexture(texX, texY, texZ, scale, pos, normal);
 ```
 
 ---
@@ -541,12 +570,12 @@ triplanarTexture(texX, texY, texZ, scale, pos, normal)
 ### Position
 
 ```javascript
-positionGeometry      // raw attribute
-positionLocal         // after skinning/morphing
-positionWorld         // world space
-positionView          // camera space
-positionWorldDirection // normalized
-positionViewDirection  // normalized
+positionGeometry; // raw attribute
+positionLocal; // after skinning/morphing
+positionWorld; // world space
+positionView; // camera space
+positionWorldDirection; // normalized
+positionViewDirection; // normalized
 ```
 
 ### Normal
@@ -574,21 +603,21 @@ viewportUV  viewport  viewportCoordinate  viewportSize
 ### Time
 
 ```javascript
-time              // elapsed time in seconds (float)
-deltaTime         // time since last frame (float)
+time; // elapsed time in seconds (float)
+deltaTime; // time since last frame (float)
 ```
 
 ### Model
 
 ```javascript
-modelDirection         // vec3
-modelViewMatrix        // mat4
-modelNormalMatrix      // mat3
-modelWorldMatrix       // mat4
-modelPosition          // vec3
-modelScale             // vec3
-modelViewPosition      // vec3
-modelWorldMatrixInverse // mat4
+modelDirection; // vec3
+modelViewMatrix; // mat4
+modelNormalMatrix; // mat3
+modelWorldMatrix; // mat4
+modelPosition; // vec3
+modelScale; // vec3
+modelViewPosition; // vec3
+modelWorldMatrixInverse; // mat4
 ```
 
 ### Other
@@ -607,18 +636,18 @@ instanceIndex             // instance/thread ID (for instancing and compute)
 ### Available Materials
 
 ```javascript
-MeshBasicNodeMaterial      // unlit, fastest
-MeshStandardNodeMaterial   // PBR with roughness/metalness
-MeshPhysicalNodeMaterial   // PBR + clearcoat, transmission, etc.
-MeshPhongNodeMaterial      // Blinn-Phong shading
-MeshLambertNodeMaterial    // Lambert diffuse
-MeshToonNodeMaterial       // cel-shaded
-MeshMatcapNodeMaterial     // matcap shading
-MeshNormalNodeMaterial     // visualize normals
-SpriteNodeMaterial         // billboarded quads
-PointsNodeMaterial         // point clouds
-LineBasicNodeMaterial      // solid lines
-LineDashedNodeMaterial     // dashed lines
+MeshBasicNodeMaterial; // unlit, fastest
+MeshStandardNodeMaterial; // PBR with roughness/metalness
+MeshPhysicalNodeMaterial; // PBR + clearcoat, transmission, etc.
+MeshPhongNodeMaterial; // Blinn-Phong shading
+MeshLambertNodeMaterial; // Lambert diffuse
+MeshToonNodeMaterial; // cel-shaded
+MeshMatcapNodeMaterial; // matcap shading
+MeshNormalNodeMaterial; // visualize normals
+SpriteNodeMaterial; // billboarded quads
+PointsNodeMaterial; // point clouds
+LineBasicNodeMaterial; // solid lines
+LineDashedNodeMaterial; // dashed lines
 ```
 
 ### All Materials - Common Properties
@@ -676,13 +705,13 @@ LineDashedNodeMaterial     // dashed lines
 ### Basic Compute (Standalone)
 
 ```javascript
-import { Fn, instanceIndex, storage } from 'three/tsl';
+import { Fn, instanceIndex, storage } from "three/tsl";
 
 // Create storage buffer
 const count = 1024;
 const array = new Float32Array(count * 4);
 const bufferAttribute = new THREE.StorageBufferAttribute(array, 4);
-const buffer = storage(bufferAttribute, 'vec4', count);
+const buffer = storage(bufferAttribute, "vec4", count);
 
 // Define compute shader
 const computeShader = Fn(() => {
@@ -692,8 +721,8 @@ const computeShader = Fn(() => {
 })().compute(count);
 
 // Execute
-renderer.compute(computeShader);              // synchronous (per-frame)
-await renderer.computeAsync(computeShader);   // async (heavy one-off tasks)
+renderer.compute(computeShader); // synchronous (per-frame)
+await renderer.computeAsync(computeShader); // async (heavy one-off tasks)
 ```
 
 ### Compute → Render Pipeline
@@ -701,7 +730,7 @@ await renderer.computeAsync(computeShader);   // async (heavy one-off tasks)
 When compute shader output needs to be rendered (e.g., simulations, procedural geometry), use `StorageInstancedBufferAttribute` with `storage()` for writing and `attribute()` for reading.
 
 ```javascript
-import { Fn, instanceIndex, storage, attribute, vec4 } from 'three/tsl';
+import { Fn, instanceIndex, storage, attribute, vec4 } from "three/tsl";
 
 const COUNT = 1000;
 
@@ -710,28 +739,28 @@ const dataArray = new Float32Array(COUNT * 4);
 const dataAttribute = new THREE.StorageInstancedBufferAttribute(dataArray, 4);
 
 // 2. Create storage node for compute shader (write access)
-const dataStorage = storage(dataAttribute, 'vec4', COUNT);
+const dataStorage = storage(dataAttribute, "vec4", COUNT);
 
 // 3. Define compute shader
 const computeShader = Fn(() => {
   const idx = instanceIndex;
   const current = dataStorage.element(idx);
-  
+
   // Modify data...
   const newValue = current.xyz.add(vec3(0.01, 0, 0));
-  
+
   dataStorage.element(idx).assign(vec4(newValue, current.w));
 })().compute(COUNT);
 
 // 4. Attach attribute to geometry for rendering
 const geometry = new THREE.BufferGeometry();
 // ... set up base geometry ...
-geometry.setAttribute('instanceData', dataAttribute);
+geometry.setAttribute("instanceData", dataAttribute);
 
 // 5. Read in material using attribute()
 const material = new THREE.MeshBasicNodeMaterial();
 material.positionNode = Fn(() => {
-  const data = attribute('instanceData', 'vec4');
+  const data = attribute("instanceData", "vec4");
   return positionLocal.add(data.xyz);
 })();
 
@@ -765,10 +794,24 @@ dataAttribute.needsUpdate = true;
 ## Example: Basic Material Shader
 
 ```javascript
-import * as THREE from 'three/webgpu';
-import { Fn, uniform, vec3, vec4, float, uv, time, 
-         normalWorld, positionWorld, cameraPosition,
-         mix, pow, dot, normalize, max } from 'three/tsl';
+import * as THREE from "three/webgpu";
+import {
+  Fn,
+  uniform,
+  vec3,
+  vec4,
+  float,
+  uv,
+  time,
+  normalWorld,
+  positionWorld,
+  cameraPosition,
+  mix,
+  pow,
+  dot,
+  normalize,
+  max,
+} from "three/tsl";
 
 // Uniforms
 const baseColor = uniform(new THREE.Color(0x4488ff));
@@ -783,11 +826,11 @@ material.colorNode = Fn(() => {
   const viewDir = normalize(cameraPosition.sub(positionWorld));
   const NdotV = max(dot(normalWorld, viewDir), 0.0);
   const fresnel = pow(float(1.0).sub(NdotV), fresnelPower);
-  
+
   // Mix base color with white rim
   const rimColor = vec3(1.0, 1.0, 1.0);
   const finalColor = mix(baseColor, rimColor, fresnel);
-  
+
   return vec4(finalColor, 1.0);
 })();
 
@@ -805,15 +848,24 @@ material.positionNode = Fn(() => {
 ## Example: Compute Shader Structure
 
 ```javascript
-import * as THREE from 'three/webgpu';
-import { Fn, instanceIndex, storage, uniform, vec4, float, sin, time } from 'three/tsl';
+import * as THREE from "three/webgpu";
+import {
+  Fn,
+  instanceIndex,
+  storage,
+  uniform,
+  vec4,
+  float,
+  sin,
+  time,
+} from "three/tsl";
 
 const COUNT = 10000;
 
 // Storage buffer
 const dataArray = new Float32Array(COUNT * 4);
 const dataAttribute = new THREE.StorageBufferAttribute(dataArray, 4);
-const dataBuffer = storage(dataAttribute, 'vec4', COUNT);
+const dataBuffer = storage(dataAttribute, "vec4", COUNT);
 
 // Uniforms for compute
 const speed = uniform(1.0);
@@ -822,15 +874,15 @@ const speed = uniform(1.0);
 const updateCompute = Fn(() => {
   const idx = instanceIndex;
   const data = dataBuffer.element(idx);
-  
+
   // Read current values
   const position = data.xyz.toVar();
   const phase = data.w;
-  
+
   // Update logic
   const offset = sin(time.mul(speed).add(phase)).mul(0.1);
   position.y.addAssign(offset);
-  
+
   // Write back
   dataBuffer.element(idx).assign(vec4(position, phase));
 });
@@ -849,19 +901,19 @@ const computeNode = updateCompute().compute(COUNT);
 
 ```javascript
 // WRONG
-if(condition, () => {})
-// CORRECT
-If(condition, () => {})  // capital I
+if ((condition, () => {}))
+  // CORRECT
+  If(condition, () => {}); // capital I
 ```
 
 ### ERROR: Cannot assign
 
 ```javascript
 // WRONG
-const v = vec3(1,2,3);
+const v = vec3(1, 2, 3);
 v.x = 5;
 // CORRECT
-const v = vec3(1,2,3).toVar();
+const v = vec3(1, 2, 3).toVar();
 v.x.assign(5);
 ```
 
@@ -869,9 +921,9 @@ v.x.assign(5);
 
 ```javascript
 // WRONG
-sqrt(intValue)
+sqrt(intValue);
 // CORRECT
-sqrt(intValue.toFloat())
+sqrt(intValue.toFloat());
 ```
 
 ### ERROR: Uniform not changing
@@ -887,22 +939,22 @@ myUniform.value = newValue;
 
 ```javascript
 // WRONG
-import { vec3 } from 'three/nodes';
-import * as THREE from 'three';
+import { vec3 } from "three/nodes";
+import * as THREE from "three";
 // CORRECT
-import { vec3 } from 'three/tsl';
-import * as THREE from 'three/webgpu';
+import { vec3 } from "three/tsl";
+import * as THREE from "three/webgpu";
 ```
 
 ### ERROR: Compute data not visible in render
 
 ```javascript
 // WRONG: Using storage() in render material
-material.positionNode = storage(attr, 'vec4', count).element(idx).xyz;
+material.positionNode = storage(attr, "vec4", count).element(idx).xyz;
 
 // CORRECT: Use attribute() to read in render shaders
-geometry.setAttribute('myData', attr);
-material.positionNode = attribute('myData', 'vec4').xyz;
+geometry.setAttribute("myData", attr);
+material.positionNode = attribute("myData", "vec4").xyz;
 ```
 
 ### ERROR: Nothing renders
@@ -924,7 +976,9 @@ renderer.render(scene, camera);
 
 ```javascript
 const fresnel = Fn(() => {
-  const NdotV = normalize(cameraPosition.sub(positionWorld)).dot(normalWorld).max(0);
+  const NdotV = normalize(cameraPosition.sub(positionWorld))
+    .dot(normalWorld)
+    .max(0);
   return pow(float(1).sub(NdotV), 5);
 });
 ```
@@ -975,7 +1029,7 @@ const attenuation = float(1.0).div(distance.mul(distance).add(1.0));
 ### Circular Mask (for sprites/points)
 
 ```javascript
-const uvCentered = uv().sub(0.5).mul(2.0);  // -1 to 1
+const uvCentered = uv().sub(0.5).mul(2.0); // -1 to 1
 const dist = length(uvCentered);
 const circle = smoothstep(float(1.0), float(0.8), dist);
 ```
@@ -984,26 +1038,26 @@ const circle = smoothstep(float(1.0), float(0.8), dist);
 
 ## GLSL → TSL Migration
 
-| GLSL | TSL |
-|------|-----|
-| `position` | `positionGeometry` |
-| `transformed` | `positionLocal` |
-| `transformedNormal` | `normalLocal` |
-| `vWorldPosition` | `positionWorld` |
-| `vColor` | `vertexColor()` |
-| `vUv` / `uv` | `uv()` |
-| `vNormal` | `normalView` |
-| `viewMatrix` | `cameraViewMatrix` |
-| `modelMatrix` | `modelWorldMatrix` |
-| `modelViewMatrix` | `modelViewMatrix` |
-| `projectionMatrix` | `cameraProjectionMatrix` |
-| `diffuseColor` | `material.colorNode` |
-| `gl_FragColor` | `material.fragmentNode` |
-| `texture2D(tex, uv)` | `texture(tex, uv)` |
-| `textureCube(tex, dir)` | `cubeTexture(tex, dir)` |
-| `gl_FragCoord` | `screenCoordinate` |
-| `gl_PointCoord` | `uv()` in SpriteNodeMaterial/PointsNodeMaterial |
-| `gl_InstanceID` | `instanceIndex` |
+| GLSL                    | TSL                                             |
+| ----------------------- | ----------------------------------------------- |
+| `position`              | `positionGeometry`                              |
+| `transformed`           | `positionLocal`                                 |
+| `transformedNormal`     | `normalLocal`                                   |
+| `vWorldPosition`        | `positionWorld`                                 |
+| `vColor`                | `vertexColor()`                                 |
+| `vUv` / `uv`            | `uv()`                                          |
+| `vNormal`               | `normalView`                                    |
+| `viewMatrix`            | `cameraViewMatrix`                              |
+| `modelMatrix`           | `modelWorldMatrix`                              |
+| `modelViewMatrix`       | `modelViewMatrix`                               |
+| `projectionMatrix`      | `cameraProjectionMatrix`                        |
+| `diffuseColor`          | `material.colorNode`                            |
+| `gl_FragColor`          | `material.fragmentNode`                         |
+| `texture2D(tex, uv)`    | `texture(tex, uv)`                              |
+| `textureCube(tex, dir)` | `cubeTexture(tex, dir)`                         |
+| `gl_FragCoord`          | `screenCoordinate`                              |
+| `gl_PointCoord`         | `uv()` in SpriteNodeMaterial/PointsNodeMaterial |
+| `gl_InstanceID`         | `instanceIndex`                                 |
 
 ---
 
@@ -1019,14 +1073,14 @@ TSL node materials automatically handle lighting when using materials like `Mesh
 
 ```javascript
 // These materials automatically respond to lights in the scene
-MeshStandardNodeMaterial   // PBR - responds to all light types
-MeshPhysicalNodeMaterial   // Extended PBR
-MeshPhongNodeMaterial      // Blinn-Phong shading
-MeshLambertNodeMaterial    // Lambert diffuse only
-MeshToonNodeMaterial       // Cel-shaded lighting
+MeshStandardNodeMaterial; // PBR - responds to all light types
+MeshPhysicalNodeMaterial; // Extended PBR
+MeshPhongNodeMaterial; // Blinn-Phong shading
+MeshLambertNodeMaterial; // Lambert diffuse only
+MeshToonNodeMaterial; // Cel-shaded lighting
 
 // These materials do NOT respond to lights
-MeshBasicNodeMaterial      // Unlit - use for custom lighting
+MeshBasicNodeMaterial; // Unlit - use for custom lighting
 ```
 
 ### Accessing Light Information in TSL
@@ -1034,7 +1088,7 @@ MeshBasicNodeMaterial      // Unlit - use for custom lighting
 When creating custom lighting, you can access light data through the material context:
 
 ```javascript
-import { Fn, vec3, float, dot, normalize, max, pow } from 'three/tsl';
+import { Fn, vec3, float, dot, normalize, max, pow } from "three/tsl";
 
 // Access light direction (for directional lights)
 const material = new THREE.MeshBasicNodeMaterial();
@@ -1043,14 +1097,14 @@ material.colorNode = Fn(({ lightDirection, lightColor, lightIntensity }) => {
   // lightDirection is a vec3 pointing FROM the light
   // For directional lights, this is constant
   // For point/spot lights, calculate: normalize(lightPosition - positionWorld)
-  
+
   const N = normalWorld;
   const L = normalize(lightDirection);
-  
+
   // Lambert diffuse
   const NdotL = max(dot(N, L), 0.0);
   const diffuse = NdotL.mul(lightIntensity).mul(lightColor);
-  
+
   return vec4(diffuse, 1.0);
 });
 ```
@@ -1060,24 +1114,24 @@ material.colorNode = Fn(({ lightDirection, lightColor, lightIntensity }) => {
 #### Lambert Diffuse Lighting
 
 ```javascript
-import { Fn, vec3, vec4, float, dot, normalize, max } from 'three/tsl';
+import { Fn, vec3, vec4, float, dot, normalize, max } from "three/tsl";
 
 material.colorNode = Fn(() => {
   // Light direction (example: directional light from above-right)
   const lightDir = normalize(vec3(1, 1, 0.5));
   const normal = normalWorld;
-  
+
   // Lambert: N · L
   const NdotL = max(dot(normal, lightDir), 0.0);
-  
+
   // Base color with lighting
   const baseColor = vec3(0.8, 0.6, 0.4);
   const litColor = baseColor.mul(NdotL);
-  
+
   // Add ambient
   const ambient = baseColor.mul(0.2);
   const finalColor = litColor.add(ambient);
-  
+
   return vec4(finalColor, 1.0);
 })();
 ```
@@ -1085,27 +1139,37 @@ material.colorNode = Fn(() => {
 #### Blinn-Phong Lighting (Diffuse + Specular)
 
 ```javascript
-import { Fn, vec3, vec4, float, dot, normalize, max, pow, reflect } from 'three/tsl';
+import {
+  Fn,
+  vec3,
+  vec4,
+  float,
+  dot,
+  normalize,
+  max,
+  pow,
+  reflect,
+} from "three/tsl";
 
 material.colorNode = Fn(() => {
   const lightDir = normalize(vec3(1, 1, 0.5));
   const normal = normalWorld;
   const viewDir = normalize(cameraPosition.sub(positionWorld));
-  
+
   // Diffuse (Lambert)
   const NdotL = max(dot(normal, lightDir), 0.0);
   const diffuse = vec3(0.8, 0.6, 0.4).mul(NdotL);
-  
+
   // Specular (Blinn-Phong)
   const halfDir = normalize(lightDir.add(viewDir));
   const NdotH = max(dot(normal, halfDir), 0.0);
   const shininess = float(32.0);
   const specular = pow(NdotH, shininess).mul(0.5);
-  
+
   // Combine
   const ambient = vec3(0.2, 0.2, 0.2);
   const finalColor = diffuse.add(specular).add(ambient);
-  
+
   return vec4(finalColor, 1.0);
 })();
 ```
@@ -1113,7 +1177,17 @@ material.colorNode = Fn(() => {
 #### PBR-Style Lighting (Roughness/Metalness)
 
 ```javascript
-import { Fn, vec3, vec4, float, dot, normalize, max, pow, mix } from 'three/tsl';
+import {
+  Fn,
+  vec3,
+  vec4,
+  float,
+  dot,
+  normalize,
+  max,
+  pow,
+  mix,
+} from "three/tsl";
 
 const material = new THREE.MeshStandardNodeMaterial();
 
@@ -1122,7 +1196,7 @@ material.colorNode = Fn(() => {
   const baseColor = vec3(0.8, 0.2, 0.2);
   const roughness = float(0.5);
   const metalness = float(0.0);
-  
+
   // Use built-in PBR lighting, but modify base color
   return vec4(baseColor, 1.0);
 })();
@@ -1158,14 +1232,14 @@ scene.add(pointLight);
 material.colorNode = Fn(() => {
   const lightPos = vec3(10, 10, 10);
   const lightDir = normalize(lightPos.sub(positionWorld));
-  
+
   // Calculate distance for attenuation
   const distance = length(lightPos.sub(positionWorld));
   const attenuation = float(1.0).div(distance.mul(distance).add(1.0));
-  
+
   const NdotL = max(dot(normalWorld, lightDir), 0.0);
   const lit = NdotL.mul(attenuation);
-  
+
   return vec4(vec3(lit), 1.0);
 })();
 ```
@@ -1186,14 +1260,14 @@ material.colorNode = Fn(() => {
   const lightDir = normalize(lightPos.sub(positionWorld));
   const spotDir = normalize(vec3(0, -1, 0)); // Spot direction
   const spotAngle = float(Math.cos(Math.PI / 6)); // cos(angle)
-  
+
   // Spot cone calculation
   const spotDot = dot(lightDir.negate(), spotDir);
   const spotFactor = smoothstep(spotAngle.mul(0.9), spotAngle, spotDot);
-  
+
   const NdotL = max(dot(normalWorld, lightDir), 0.0);
   const lit = NdotL.mul(spotFactor);
-  
+
   return vec4(vec3(lit), 1.0);
 })();
 ```
@@ -1215,12 +1289,12 @@ const ambient = vec3(0.5, 0.5, 0.5); // Constant color
 material.colorNode = Fn(() => {
   const baseColor = vec3(0.8, 0.6, 0.4);
   const ambient = baseColor.mul(0.2);
-  
+
   // Light 1: Directional
   const lightDir1 = normalize(vec3(1, 1, 0.5));
   const NdotL1 = max(dot(normalWorld, lightDir1), 0.0);
   const light1 = baseColor.mul(NdotL1).mul(0.8);
-  
+
   // Light 2: Point light
   const lightPos2 = vec3(5, 5, 5);
   const lightDir2 = normalize(lightPos2.sub(positionWorld));
@@ -1228,7 +1302,7 @@ material.colorNode = Fn(() => {
   const atten2 = float(1.0).div(dist2.mul(dist2).add(1.0));
   const NdotL2 = max(dot(normalWorld, lightDir2), 0.0);
   const light2 = baseColor.mul(NdotL2).mul(atten2).mul(0.5);
-  
+
   // Combine all lights
   const finalColor = ambient.add(light1).add(light2);
   return vec4(finalColor, 1.0);
@@ -1255,17 +1329,17 @@ mesh.receiveShadow = true;
 #### Accessing Shadow Maps in TSL
 
 ```javascript
-import { shadow } from 'three/tsl';
+import { shadow } from "three/tsl";
 
 material.colorNode = Fn(() => {
   // Access shadow factor (0 = fully shadowed, 1 = fully lit)
   const shadowFactor = shadow();
-  
+
   // Apply shadow to lighting
   const baseColor = vec3(0.8, 0.6, 0.4);
   const litColor = baseColor.mul(shadowFactor);
   const shadowColor = baseColor.mul(0.2); // Darker in shadow
-  
+
   const finalColor = mix(shadowColor, litColor, shadowFactor);
   return vec4(finalColor, 1.0);
 })();
@@ -1276,9 +1350,12 @@ material.colorNode = Fn(() => {
 ```javascript
 // In JavaScript
 const envMap = new THREE.CubeTextureLoader().load([
-  'px.jpg', 'nx.jpg',
-  'py.jpg', 'ny.jpg',
-  'pz.jpg', 'nz.jpg'
+  "px.jpg",
+  "nx.jpg",
+  "py.jpg",
+  "ny.jpg",
+  "pz.jpg",
+  "nz.jpg",
 ]);
 scene.environment = envMap;
 
@@ -1305,12 +1382,12 @@ material.emissiveNode = Fn(() => {
 material.colorNode = Fn(() => {
   const lightDir = normalize(vec3(1, 1, 0.5));
   const NdotL = dot(normalWorld, lightDir);
-  
+
   // Quantize lighting into bands
   const toonSteps = float(3.0);
   const toon = floor(NdotL.mul(toonSteps)).div(toonSteps);
   const lit = max(toon, 0.0);
-  
+
   return vec4(vec3(lit), 1.0);
 })();
 ```
@@ -1322,17 +1399,17 @@ material.colorNode = Fn(() => {
   const lightDir = normalize(vec3(1, 1, 0.5));
   const viewDir = normalize(cameraPosition.sub(positionWorld));
   const normal = normalWorld;
-  
+
   // Standard lighting
   const NdotL = max(dot(normal, lightDir), 0.0);
-  
+
   // Subsurface: light coming through from behind
   const VdotL = dot(viewDir, lightDir);
   const subsurface = max(VdotL.negate(), 0.0).mul(0.3);
-  
+
   const baseColor = vec3(1.0, 0.8, 0.7);
   const lit = baseColor.mul(NdotL.add(subsurface));
-  
+
   return vec4(lit, 1.0);
 })();
 ```
