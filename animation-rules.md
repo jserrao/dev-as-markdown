@@ -15,6 +15,7 @@
 ### 1. `ease-out` ⭐ **USE MOST OFTEN**
 
 **When to use:**
+
 - User-initiated interactions (dropdowns, modals, buttons)
 - Enter and exit animations
 - Elements that appear or disappear from the screen
@@ -25,6 +26,7 @@
 **Pro tip:** Add a subtle scale down effect (`scale: 0.97`) on button `:active` pseudo-class with a `150ms` transition to make UI feel even more responsive.
 
 **Example use cases:**
+
 - Dropdown menus
 - Modal dialogs
 - Toast notifications (though `ease` can be more elegant)
@@ -35,6 +37,7 @@
 ### 2. `ease-in-out`
 
 **When to use:**
+
 - Elements that are already on screen and need to move to a new position
 - Elements that morph into a new shape
 - Animations that stay visible throughout the transition
@@ -42,6 +45,7 @@
 **Why:** Mimics natural acceleration and deceleration (like a car), making the movement feel organic.
 
 **Example use cases:**
+
 - Timeline components
 - Page morphing animations
 - Dynamic Island-style components
@@ -53,7 +57,8 @@
 
 **Rule:** Generally avoid `ease-in` for UI animations.
 
-**Why:** 
+**Why:**
+
 - The slow start makes interfaces feel sluggish and less responsive
 - Accelerates at the end, which is opposite of what we want
 - Feels unnatural because our brain expects things to settle at the end of movement
@@ -65,6 +70,7 @@
 ### 4. `linear`
 
 **When to use:**
+
 - Constant animations (marquees)
 - Visualizing passage of time (progress bars, "hold to delete" interactions)
 - 3D coin rotations
@@ -74,6 +80,7 @@
 **Rule:** Avoid `linear` for most UI animations as it feels robotic and unnatural.
 
 **Example use cases:**
+
 - Marquee text scrolling
 - Hold-to-delete progress indicators
 - 3D coin rotation animations
@@ -84,6 +91,7 @@
 ### 5. `ease`
 
 **When to use:**
+
 - Hover effects (color, background-color, opacity transitions)
 - Subtle, gentle animations
 - When elegance is more important than responsiveness
@@ -91,6 +99,7 @@
 **Why:** Asymmetrical curve that starts faster and ends slower than `ease-in-out`, creating an elegant feel.
 
 **Example use cases:**
+
 - Button hover states
 - Color transitions
 - Background color changes
@@ -103,10 +112,12 @@
 **Rule:** Built-in easing curves often have weak acceleration. Use custom easing curves for stronger, more energetic animations.
 
 **Resources:**
+
 - Use custom easing curves from the blueprint (sorted from weakest to strongest acceleration)
 - Custom curves make animations feel more energetic and polished
 
 **How to create custom curves:**
+
 - Use `cubic-bezier()` function in CSS
 - Use tools like Cubic Bezier Curve Generator
 - Study existing curves (e.g., iOS Sheet easing for native feel)
